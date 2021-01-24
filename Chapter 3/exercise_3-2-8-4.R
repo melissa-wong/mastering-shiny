@@ -11,6 +11,7 @@ library(shiny)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
+    theme = shinythemes::shinytheme("slate"),
     sliderInput("test", NULL, min=0, max=100, value=5, step = 5, animate=TRUE)
 )
 
