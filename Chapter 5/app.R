@@ -19,7 +19,10 @@ population <- vroom::vroom(here("Chapter 5", "population.tsv"))
 
 count_top <- function(df, var, n = 5) {
     df %>%
-        mutate({{ var }} := fct_lump(fct_infreq({{ var }}), n = n)) %>%
+        # mutate({{ var }} := fct_lump(fct_infreq({{ var }}), n = n)) %>%
+        # Changing order of fct_lump and fct_infreq doesn't change numbers
+        # but it does change the order in which categories appear
+         mutate({{ var }} := fct_infreq(fct_lump({{ var }}, n = n))) %>%
         group_by({{ var }}) %>%
         summarise(n = as.integer(sum(weight)))
 }
@@ -43,6 +46,12 @@ ui <- fluidPage(
         column(2, selectInput("y", "Y axis", c("rate", "count")))
     ),
     fluidRow(
+        column(12,
+               numericInput("rowCount", "Number Rows to Display",
+                            5, min=2, max=10, step=1)
+        )
+    ),
+    fluidRow(
         column(4, tableOutput("diag")),
         column(4, tableOutput("body_part")),
         column(4, tableOutput("location"))
@@ -59,6 +68,7 @@ ui <- fluidPage(
 server <- function(input, output, session) {
     selected <- reactive(injuries %>% filter(prod_code == input$code))
     
+    numRows <- reactive(input$rowCount - 1)
     # Iteration 1
     # output$diag <- renderTable(
     #     selected() %>% count(diag, wt = weight, sort = TRUE)
@@ -72,13 +82,13 @@ server <- function(input, output, session) {
     
     # Iteration 2
     output$diag <- renderTable(
-        count_top(selected(), diag), width = "100%"
+        count_top(selected(), diag, numRows()), width = "100%"
     )
     output$body_part <- renderTable(
-        count_top(selected(), body_part), width = "100%"
+        count_top(selected(), body_part, numRows()), width = "100%"
     )
     output$location <- renderTable(
-        count_top(selected(), location), width = "100%"
+        count_top(selected(), location, numRows()), width = "100%"
     )
     
     summary <- reactive({
