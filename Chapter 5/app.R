@@ -60,8 +60,9 @@ ui <- fluidPage(
         column(12, plotOutput("age_sex"))
     ),
     fluidRow(
-        column(2, actionButton("story", "Tell me a story")),
-        column(10, textOutput("narrative"))
+        column(1, actionButton("backward", "<")),
+        column(10, textOutput("narrative")),
+        column(1, actionButton("forward", ">"))
     )
 )
 
@@ -121,10 +122,24 @@ server <- function(input, output, session) {
         }
     }, res = 96)
     
+    idx <- reactiveVal(1)
+    observeEvent(input$forward, {
+        nidx = idx() + 1
+        if (nidx > nrow(selected())) {nidx = 1}
+        idx(nidx)
+    })
+    observeEvent(input$backward, {
+        nidx = idx() - 1
+        if (nidx <= 0) {nidx = nrow(selected())}
+        idx(nidx)
+    })
+    
     narrative_sample <- eventReactive(
-        list(input$story, selected()),
-        selected() %>% pull(narrative) %>% sample(1)
+        list(input$story, selected(), idx()),
+        #selected() %>% pull(narrative) %>% sample(1)
+        paste(idx(), " : ", selected()$narrative[idx()])
     )
+    
     output$narrative <- renderText(narrative_sample())
 }
 
